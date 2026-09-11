@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIH 2026 — Intelligent Dead Reckoning (IDR) System</title>
+  <meta name="description" content="Smartphone-Based Intelligent Dead Reckoning System with AI Drift Compensation & GNSS Outage Recovery">
+
+  <!-- Google Fonts: Outfit & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="/static/index.css">
+</head>
+<body class="dark-theme">
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-badge">
+        <span class="satellite-icon">🛰️</span>
+        <span class="pulse-dot"></span>
+      </div>
+      <div>
+        <h1 class="header-title">Intelligent Dead Reckoning <span class="tag-sih">SIH 2026</span></h1>
+        <p class="header-subtitle">Edge AI Kinematic Fusion &bull; Real IO-VNBD Dataset &bull; Target &lt;10% Drift</p>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div id="nav-mode-badge" class="mode-badge mode-gnss">
+        <span class="mode-dot"></span>
+        <span id="mode-text">GNSS AIDED</span>
+      </div>
+      <div id="drift-target-badge" class="drift-badge drift-pass">
+        <span class="drift-target-label">DRIFT:</span>
+        <span id="drift-pct-val">0.0%</span>
+        <span class="drift-target-sub">(&lt;10% TARGET)</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="scenario-selector-box">
+        <label for="scenario-select">Trajectory:</label>
+        <select id="scenario-select" class="custom-select">
+          <option value="S-A1.csv">S-A1.csv (49.5 min Highway/Urban)</option>
+          <option value="S-A2.csv">S-A2.csv (Suburban Drive)</option>
+          <option value="S-A3.csv">S-A3.csv (City Trajectory)</option>
+          <option value="S-A4.csv">S-A4.csv (Extended Route)</option>
+        </select>
+      </div>
+      <div class="connection-status">
+        <span id="ws-indicator" class="ws-dot disconnected"></span>
+        <span id="ws-label">Connecting</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Layout -->
+  <main class="dashboard-grid">
+    <!-- Left Panel: Map & Trajectory Visualization -->
+    <section class="map-section glass-card">
+      <div class="map-header">
+        <div class="map-legend">
+          <div class="legend-item"><span class="legend-line line-gt"></span> Ground Truth (GNSS)</div>
+          <div class="legend-item"><span class="legend-line line-idr"></span> AI-Powered IDR</div>
+          <div class="legend-item"><span class="legend-line line-ins"></span> Conventional INS (Drift)</div>
+        </div>
+
+        <div class="map-controls-inline">
+          <button id="btn-fit-route" class="icon-btn" title="Fit Entire Trajectory to View">🗺️ Fit Route</button>
+          <button id="btn-recenter" class="icon-btn" title="Follow Vehicle">🎯 Follow</button>
+          <button id="btn-clear-path" class="icon-btn" title="Clear Trajectory Trail">🧹 Clear Path</button>
+        </div>
+      </div>
+
+      <div id="navigation-map" class="map-container"></div>
+
+      <!-- Live Outage Notification Banner -->
+      <div id="blackout-banner" class="blackout-banner hidden">
+        <div class="banner-content">
+          <span class="warning-icon">⚠️</span>
+          <div>
+            <strong>GNSS BLACKOUT ACTIVE (SIMULATED TUNNEL)</strong>
+            <p>Fusing IMU with AI Speed Estimator + Non-Holonomic Constraints (NHC). Drift: <span id="banner-drift-val">0.0 m</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Telemetry & Simulation Controls -->
+    <aside class="sidebar-panel">
+      <!-- Simulation Controls Card -->
+      <div class="glass-card controls-card">
+        <h2 class="card-title">Playback & Outage Control</h2>
+        
+        <div class="control-btn-group">
+          <button id="btn-play" class="btn btn-primary">▶ Start Drive</button>
+          <button id="btn-pause" class="btn btn-secondary">⏸ Pause</button>
+          <button id="btn-reset" class="btn btn-outline">↺ Reset</button>
+        </div>
+
+        <div class="blackout-triggers">
+          <div class="outage-title">Inject GNSS Blackout Scenarios:</div>
+          <div class="trigger-buttons">
+            <button id="btn-tunnel-30" class="btn btn-tunnel">🚇 30s Tunnel</button>
+            <button id="btn-tunnel-60" class="btn btn-tunnel">⛰️ 60s Tunnel</button>
+            <button id="btn-toggle-blackout" class="btn btn-outage-toggle">🔴 Toggle Blackout</button>
+          </div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-labels">
+            <span>Step <span id="current-step">0</span> / <span id="total-steps">0</span></span>
+            <span>Elapsed: <span id="elapsed-time">00:00</span></span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-bar" class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Metric Cards -->
+      <div class="telemetry-grid">
+        <!-- Speedometer -->
+        <div class="glass-card stat-card">
+          <div class="stat-header">
+            <span class="stat-label">VEHICLE SPEED</span>
+            <span class="stat-badge ai-badge">AI ESTIMATED</span>
+          </div>
+          <div class="stat-body">
+            <div class="stat-main-value" id="val-speed">0.0</div>
+            <div class="stat-unit">km/h</div>
+          </div>
+          <div class="stat-sub">Reference GPS: <span id="val-gt-speed">0.0</span> km/h</div>
+        </div>
+
+        <!-- Compass / Heading -->
+        <div class="glass-card stat-card">
+          <div class="stat-header">
+            <span class="stat-label">HEADING / YAW</span>
+            <span class="stat-badge">AZIMUTH</span>
+          </div>
+          <div class="stat-body">
+            <div class="stat-main-value" id="val-heading">000°</div>
+            <div class="compass-dial">
+              <div id="compass-needle" class="compass-needle"></div>
+            </div>
+          </div>
+          <div class="stat-sub">Pitch: <span id="val-pitch">0.0°</span> &bull; Roll: <span id="val-roll">0.0°</span></div>
+        </div>
+
+        <!-- Drift & Benchmark -->
+        <div class="glass-card stat-card full-span">
+          <div class="stat-header">
+            <span class="stat-label">OUTAGE DRIFT BENCHMARK</span>
+            <span id="benchmark-status-tag" class="stat-badge target-tag">TARGET &lt;10%</span>
+          </div>
+          <div class="drift-comparison-grid">
+            <div class="drift-column idr-column">
+              <div class="drift-col-label">🔵 AI-Powered IDR</div>
+              <div class="drift-large-number" id="val-idr-drift">0.00 m</div>
+              <div class="drift-col-sub">Drift: <span id="val-idr-pct">0.0%</span> of dist</div>
+            </div>
+            <div class="drift-vs">VS</div>
+            <div class="drift-column ins-column">
+              <div class="drift-col-label">🔴 Conventional INS</div>
+              <div class="drift-large-number" id="val-ins-drift">0.00 m</div>
+              <div class="drift-col-sub">Drift: <span id="val-ins-pct">0.0%</span> (Diverged)</div>
+            </div>
+          </div>
+          <div class="stat-footer-bar">
+            <span>Outage Dist: <strong id="val-outage-dist">0.0 m</strong></span>
+            <span>Duration: <strong id="val-outage-dur">0.0 s</strong></span>
+            <span>Status: <strong id="val-benchmark-verdict">Awaiting Outage</strong></span>
+          </div>
+        </div>
+
+        <!-- Real-time Waveform Canvas -->
+        <div class="glass-card stat-card full-span waveform-card">
+          <div class="stat-header">
+            <span class="stat-label">REAL-TIME IMU ACCELEROMETER STREAM (m/s²)</span>
+            <span class="stat-badge">2 Hz REAL DATA</span>
+          </div>
+          <canvas id="accel-waveform" width="400" height="90" class="waveform-canvas"></canvas>
+          <div class="waveform-legend">
+            <span class="wave-x">■ Accel X</span>
+            <span class="wave-y">■ Accel Y</span>
+            <span class="wave-z">■ Accel Z</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Main Application Script -->
+  <script src="/static/app.js"></script>
+</body>
+</html>

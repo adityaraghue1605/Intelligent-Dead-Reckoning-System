@@ -1,0 +1,602 @@
+{
+  "generated_at": "2026-09-11T19:05:50.347165",
+  "raw_dir": "D:\\CODDING\\Vibe codding Projects\\Intelligent Dead Reckoning System\\data\\IO-VNBD\\raw",
+  "total_csv_files": 21,
+  "real_files": 21,
+  "lfs_stubs": 0,
+  "warning_status": "RESOLVED",
+  "file_reports": [
+    {
+      "file": "S-A1.csv",
+      "path": "Unsynchronised V and S Dataset\\Uncategorised IOVNB (V and S) Dataset\\S-Dataset\\S-A1.csv",
+      "size_kb": 1047.4,
+      "is_lfs_pointer": false,
+      "status": "OK",
+      "n_rows": 5000,
+      "n_cols": 24,
+      "columns": [
+        "GPS LATITUDE (degrees)",
+        "GPS LONGITUDE (degrees)",
+        "GPS ALTITUDE (m)",
+        "GPS SPEED (Kmh)",
+        "GPS ACCURACY (m)",
+        "GPS ORIENTATION (\u00c2\u00b0)",
+        "GPS SATELLITES IN RANGE",
+        "TIME SINCE START (ms)",
+        "DATE (YYYY-MO-DD HH-MI-SS_SSS)",
+        "ACCELEROMETER X (m/s\u00b2)",
+        "ACCELEROMETER Y (m/s\u00b2)",
+        "ACCELEROMETER Z (m/s\u00b2)",
+        "GRAVITY X (m/s\u00b2)",
+        "GRAVITY Y (m/s\u00b2)",
+        "GRAVITY Z (m/s\u00b2)",
+        "GYROSCOPE Yaw (rad/s)",
+        "GYROSCOPE Pitch (rad/s)",
+        "GYROSCOPE Roll (rad/s)",
+        "MAGNETIC FIELD X (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Z (\u00ce\u00bcT)",
+        "ORIENTATION (Yaw) (\u00c2\u00b0)",
+        "ORIENTATION (Pitch) (\u00c2\u00b0)",
+        "ORIENTATION (Roll ) (\u00c2\u00b0)"
+      ],
+      "sensor_groups": {
+        "timestamp": [
+          "TIME SINCE START (ms)"
+        ],
+        "accelerometer": [
+          "GPS ACCURACY (m)",
+          "ACCELEROMETER X (m/s\u00b2)",
+          "ACCELEROMETER Y (m/s\u00b2)",
+          "ACCELEROMETER Z (m/s\u00b2)"
+        ],
+        "gravity": [
+          "GRAVITY X (m/s\u00b2)",
+          "GRAVITY Y (m/s\u00b2)",
+          "GRAVITY Z (m/s\u00b2)"
+        ],
+        "gyroscope": [
+          "GYROSCOPE Yaw (rad/s)",
+          "GYROSCOPE Pitch (rad/s)",
+          "GYROSCOPE Roll (rad/s)"
+        ],
+        "magnetometer": [
+          "MAGNETIC FIELD X (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Z (\u00ce\u00bcT)"
+        ],
+        "orientation": [
+          "GPS ORIENTATION (\u00c2\u00b0)",
+          "ORIENTATION (Yaw) (\u00c2\u00b0)",
+          "ORIENTATION (Pitch) (\u00c2\u00b0)",
+          "ORIENTATION (Roll ) (\u00c2\u00b0)"
+        ],
+        "gnss": [
+          "GPS LATITUDE (degrees)",
+          "GPS LONGITUDE (degrees)",
+          "GPS ALTITUDE (m)",
+          "GPS SPEED (Kmh)",
+          "GPS SATELLITES IN RANGE"
+        ],
+        "unknown": [
+          "DATE (YYYY-MO-DD HH-MI-SS_SSS)"
+        ]
+      },
+      "timestamp_column": "TIME SINCE START (ms)",
+      "timestamp_analysis": {
+        "n_samples": 5000,
+        "duration_sec": 2499.5,
+        "ts_unit": "elapsed_ms -> seconds",
+        "median_dt_sec": 0.5,
+        "freq_hz": 2.0,
+        "n_gaps": 0,
+        "n_duplicate_ts": 0,
+        "max_gap_sec": 0
+      },
+      "sample_stats": {
+        "GPS LATITUDE (degrees)": {
+          "min": 52.0501,
+          "max": 52.4316,
+          "mean": 52.2765,
+          "null%": 0.0
+        },
+        "GPS LONGITUDE (degrees)": {
+          "min": -1.6129,
+          "max": -1.3059,
+          "mean": -1.4917,
+          "null%": 0.0
+        },
+        "GPS ALTITUDE (m)": {
+          "min": 0.0,
+          "max": 209.0,
+          "mean": 135.3598,
+          "null%": 0.0
+        },
+        "GPS SPEED (Kmh)": {
+          "min": 0.0,
+          "max": 33.39,
+          "mean": 24.768,
+          "null%": 0.0
+        },
+        "GPS ACCURACY (m)": {
+          "min": 4.0,
+          "max": 1799.999,
+          "mean": 16.2646,
+          "null%": 0.0
+        },
+        "GPS ORIENTATION (\u00c2\u00b0)": {
+          "min": 0.0,
+          "max": 242.7,
+          "mean": 163.4608,
+          "null%": 0.0
+        },
+        "TIME SINCE START (ms)": {
+          "min": 43.0,
+          "max": 2499543.0,
+          "mean": 1249792.5126,
+          "null%": 0.0
+        },
+        "ACCELEROMETER X (m/s\u00b2)": {
+          "min": -2.821,
+          "max": 2.6574,
+          "mean": -0.0288,
+          "null%": 0.0
+        }
+      },
+      "null_pct_per_column": {},
+      "gnss_outage_check": {
+        "gnss_lat_missing": 0,
+        "gnss_lat_zero": 0,
+        "gnss_lat_range": [
+          52.0501,
+          52.4316
+        ],
+        "gnss_repeated_rows": 4979
+      }
+    },
+    {
+      "file": "S-A10.csv",
+      "path": "Unsynchronised V and S Dataset\\Uncategorised IOVNB (V and S) Dataset\\S-Dataset\\S-A10.csv",
+      "size_kb": 1637.9,
+      "is_lfs_pointer": false,
+      "status": "OK",
+      "n_rows": 5000,
+      "n_cols": 24,
+      "columns": [
+        "GPS LATITUDE (degrees)",
+        "GPS LONGITUDE (degrees)",
+        "GPS ALTITUDE (m)",
+        "GPS SPEED (Kmh)",
+        "GPS ACCURACY (m)",
+        "GPS ORIENTATION (\u00c2\u00b0)",
+        "GPS SATELLITES IN RANGE",
+        "TIME SINCE START (ms)",
+        "DATE (YYYY-MO-DD HH-MI-SS_SSS)",
+        "ACCELEROMETER X (m/s\u00b2)",
+        "ACCELEROMETER Y (m/s\u00b2)",
+        "ACCELEROMETER Z (m/s\u00b2)",
+        "GRAVITY X (m/s\u00b2)",
+        "GRAVITY Y (m/s\u00b2)",
+        "GRAVITY Z (m/s\u00b2)",
+        "GYROSCOPE Yaw (rad/s)",
+        "GYROSCOPE Pitch (rad/s)",
+        "GYROSCOPE Roll (rad/s)",
+        "MAGNETIC FIELD X (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Z (\u00ce\u00bcT)",
+        "ORIENTATION (Yaw) (\u00c2\u00b0)",
+        "ORIENTATION (Pitch) (\u00c2\u00b0)",
+        "ORIENTATION (Roll ) (\u00c2\u00b0)"
+      ],
+      "sensor_groups": {
+        "timestamp": [
+          "TIME SINCE START (ms)"
+        ],
+        "accelerometer": [
+          "GPS ACCURACY (m)",
+          "ACCELEROMETER X (m/s\u00b2)",
+          "ACCELEROMETER Y (m/s\u00b2)",
+          "ACCELEROMETER Z (m/s\u00b2)"
+        ],
+        "gravity": [
+          "GRAVITY X (m/s\u00b2)",
+          "GRAVITY Y (m/s\u00b2)",
+          "GRAVITY Z (m/s\u00b2)"
+        ],
+        "gyroscope": [
+          "GYROSCOPE Yaw (rad/s)",
+          "GYROSCOPE Pitch (rad/s)",
+          "GYROSCOPE Roll (rad/s)"
+        ],
+        "magnetometer": [
+          "MAGNETIC FIELD X (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Z (\u00ce\u00bcT)"
+        ],
+        "orientation": [
+          "GPS ORIENTATION (\u00c2\u00b0)",
+          "ORIENTATION (Yaw) (\u00c2\u00b0)",
+          "ORIENTATION (Pitch) (\u00c2\u00b0)",
+          "ORIENTATION (Roll ) (\u00c2\u00b0)"
+        ],
+        "gnss": [
+          "GPS LATITUDE (degrees)",
+          "GPS LONGITUDE (degrees)",
+          "GPS ALTITUDE (m)",
+          "GPS SPEED (Kmh)",
+          "GPS SATELLITES IN RANGE"
+        ],
+        "unknown": [
+          "DATE (YYYY-MO-DD HH-MI-SS_SSS)"
+        ]
+      },
+      "timestamp_column": "TIME SINCE START (ms)",
+      "timestamp_analysis": {
+        "n_samples": 5000,
+        "duration_sec": 2499.5,
+        "ts_unit": "elapsed_ms -> seconds",
+        "median_dt_sec": 0.5,
+        "freq_hz": 2.0,
+        "n_gaps": 0,
+        "n_duplicate_ts": 0,
+        "max_gap_sec": 0
+      },
+      "sample_stats": {
+        "GPS LATITUDE (degrees)": {
+          "min": 52.4203,
+          "max": 52.4979,
+          "mean": 52.458,
+          "null%": 0.0
+        },
+        "GPS LONGITUDE (degrees)": {
+          "min": -1.7441,
+          "max": -1.5217,
+          "mean": -1.6725,
+          "null%": 0.0
+        },
+        "GPS ALTITUDE (m)": {
+          "min": 412.9,
+          "max": 651.61,
+          "mean": 481.844,
+          "null%": 0.0
+        },
+        "GPS SPEED (Kmh)": {
+          "min": 0.0,
+          "max": 97.27,
+          "mean": 49.9685,
+          "null%": 0.0
+        },
+        "GPS ACCURACY (m)": {
+          "min": 9.6774,
+          "max": 41.9355,
+          "mean": 21.8581,
+          "null%": 0.0
+        },
+        "GPS ORIENTATION (\u00c2\u00b0)": {
+          "min": 0.9,
+          "max": 359.9,
+          "mean": 223.5458,
+          "null%": 0.0
+        },
+        "TIME SINCE START (ms)": {
+          "min": 48.0,
+          "max": 2499548.0,
+          "mean": 1249798.2834,
+          "null%": 0.0
+        },
+        "ACCELEROMETER X (m/s\u00b2)": {
+          "min": -5.618,
+          "max": 3.9908,
+          "mean": -0.221,
+          "null%": 0.0
+        }
+      },
+      "null_pct_per_column": {},
+      "gnss_outage_check": {
+        "gnss_lat_missing": 0,
+        "gnss_lat_zero": 0,
+        "gnss_lat_range": [
+          52.4203,
+          52.4979
+        ],
+        "gnss_repeated_rows": 2670
+      }
+    },
+    {
+      "file": "S-A11.csv",
+      "path": "Unsynchronised V and S Dataset\\Uncategorised IOVNB (V and S) Dataset\\S-Dataset\\S-A11.csv",
+      "size_kb": 905.2,
+      "is_lfs_pointer": false,
+      "status": "OK",
+      "n_rows": 5000,
+      "n_cols": 24,
+      "columns": [
+        "GPS LATITUDE (degrees)",
+        "GPS LONGITUDE (degrees)",
+        "GPS ALTITUDE (m)",
+        "GPS SPEED (Kmh)",
+        "GPS ACCURACY (m)",
+        "GPS ORIENTATION (\u00c2\u00b0)",
+        "GPS SATELLITES IN RANGE",
+        "TIME SINCE START (ms)",
+        "DATE (YYYY-MO-DD HH-MI-SS_SSS)",
+        "ACCELEROMETER X (m/s\u00b2)",
+        "ACCELEROMETER Y (m/s\u00b2)",
+        "ACCELEROMETER Z (m/s\u00b2)",
+        "GRAVITY X (m/s\u00b2)",
+        "GRAVITY Y (m/s\u00b2)",
+        "GRAVITY Z (m/s\u00b2)",
+        "GYROSCOPE Yaw (rad/s)",
+        "GYROSCOPE Pitch (rad/s)",
+        "GYROSCOPE Roll (rad/s)",
+        "MAGNETIC FIELD X (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Z (\u00ce\u00bcT)",
+        "ORIENTATION (Yaw) (\u00c2\u00b0)",
+        "ORIENTATION (Pitch) (\u00c2\u00b0)",
+        "ORIENTATION (Roll ) (\u00c2\u00b0)"
+      ],
+      "sensor_groups": {
+        "timestamp": [
+          "TIME SINCE START (ms)"
+        ],
+        "accelerometer": [
+          "GPS ACCURACY (m)",
+          "ACCELEROMETER X (m/s\u00b2)",
+          "ACCELEROMETER Y (m/s\u00b2)",
+          "ACCELEROMETER Z (m/s\u00b2)"
+        ],
+        "gravity": [
+          "GRAVITY X (m/s\u00b2)",
+          "GRAVITY Y (m/s\u00b2)",
+          "GRAVITY Z (m/s\u00b2)"
+        ],
+        "gyroscope": [
+          "GYROSCOPE Yaw (rad/s)",
+          "GYROSCOPE Pitch (rad/s)",
+          "GYROSCOPE Roll (rad/s)"
+        ],
+        "magnetometer": [
+          "MAGNETIC FIELD X (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Z (\u00ce\u00bcT)"
+        ],
+        "orientation": [
+          "GPS ORIENTATION (\u00c2\u00b0)",
+          "ORIENTATION (Yaw) (\u00c2\u00b0)",
+          "ORIENTATION (Pitch) (\u00c2\u00b0)",
+          "ORIENTATION (Roll ) (\u00c2\u00b0)"
+        ],
+        "gnss": [
+          "GPS LATITUDE (degrees)",
+          "GPS LONGITUDE (degrees)",
+          "GPS ALTITUDE (m)",
+          "GPS SPEED (Kmh)",
+          "GPS SATELLITES IN RANGE"
+        ],
+        "unknown": [
+          "DATE (YYYY-MO-DD HH-MI-SS_SSS)"
+        ]
+      },
+      "timestamp_column": "TIME SINCE START (ms)",
+      "timestamp_analysis": {
+        "n_samples": 5000,
+        "duration_sec": 2499.5,
+        "ts_unit": "elapsed_ms -> seconds",
+        "median_dt_sec": 0.5,
+        "freq_hz": 2.0,
+        "n_gaps": 0,
+        "n_duplicate_ts": 0,
+        "max_gap_sec": 0
+      },
+      "sample_stats": {
+        "GPS LATITUDE (degrees)": {
+          "min": 52.1567,
+          "max": 52.4317,
+          "mean": 52.288,
+          "null%": 0.0
+        },
+        "GPS LONGITUDE (degrees)": {
+          "min": -1.8846,
+          "max": -1.4911,
+          "mean": -1.6578,
+          "null%": 0.0
+        },
+        "GPS ALTITUDE (m)": {
+          "min": 0.0,
+          "max": 178.0,
+          "mean": 110.951,
+          "null%": 0.0
+        },
+        "GPS SPEED (Kmh)": {
+          "min": 0.0,
+          "max": 31.9,
+          "mean": 19.855,
+          "null%": 0.0
+        },
+        "GPS ACCURACY (m)": {
+          "min": 3.0,
+          "max": 49.0,
+          "mean": 18.252,
+          "null%": 0.0
+        },
+        "GPS ORIENTATION (\u00c2\u00b0)": {
+          "min": 0.0,
+          "max": 318.7,
+          "mean": 204.7762,
+          "null%": 0.0
+        },
+        "TIME SINCE START (ms)": {
+          "min": 98.0,
+          "max": 2499599.0,
+          "mean": 1249848.594,
+          "null%": 0.0
+        },
+        "ACCELEROMETER X (m/s\u00b2)": {
+          "min": -3.3754,
+          "max": 3.4887,
+          "mean": -0.0136,
+          "null%": 0.0
+        }
+      },
+      "null_pct_per_column": {},
+      "gnss_outage_check": {
+        "gnss_lat_missing": 0,
+        "gnss_lat_zero": 0,
+        "gnss_lat_range": [
+          52.1567,
+          52.4317
+        ],
+        "gnss_repeated_rows": 4820
+      }
+    },
+    {
+      "file": "S-A12.csv",
+      "path": "Unsynchronised V and S Dataset\\Uncategorised IOVNB (V and S) Dataset\\S-Dataset\\S-A12.csv",
+      "size_kb": 811.5,
+      "is_lfs_pointer": false,
+      "status": "OK",
+      "n_rows": 4673,
+      "n_cols": 24,
+      "columns": [
+        "GPS LATITUDE (degrees)",
+        "GPS LONGITUDE (degrees)",
+        "GPS ALTITUDE (m)",
+        "GPS SPEED (Kmh)",
+        "GPS ACCURACY (m)",
+        "GPS ORIENTATION (\u00c2\u00b0)",
+        "GPS SATELLITES IN RANGE",
+        "TIME SINCE START (ms)",
+        "DATE (YYYY-MO-DD HH-MI-SS_SSS)",
+        "ACCELEROMETER X (m/s\u00b2)",
+        "ACCELEROMETER Y (m/s\u00b2)",
+        "ACCELEROMETER Z (m/s\u00b2)",
+        "GRAVITY X (m/s\u00b2)",
+        "GRAVITY Y (m/s\u00b2)",
+        "GRAVITY Z (m/s\u00b2)",
+        "GYROSCOPE Yaw (rad/s)",
+        "GYROSCOPE Pitch (rad/s)",
+        "GYROSCOPE Roll (rad/s)",
+        "MAGNETIC FIELD X (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+        "MAGNETIC FIELD Z (\u00ce\u00bcT)",
+        "ORIENTATION (Yaw) (\u00c2\u00b0)",
+        "ORIENTATION (Pitch) (\u00c2\u00b0)",
+        "ORIENTATION (Roll ) (\u00c2\u00b0)"
+      ],
+      "sensor_groups": {
+        "timestamp": [
+          "TIME SINCE START (ms)"
+        ],
+        "accelerometer": [
+          "GPS ACCURACY (m)",
+          "ACCELEROMETER X (m/s\u00b2)",
+          "ACCELEROMETER Y (m/s\u00b2)",
+          "ACCELEROMETER Z (m/s\u00b2)"
+        ],
+        "gravity": [
+          "GRAVITY X (m/s\u00b2)",
+          "GRAVITY Y (m/s\u00b2)",
+          "GRAVITY Z (m/s\u00b2)"
+        ],
+        "gyroscope": [
+          "GYROSCOPE Yaw (rad/s)",
+          "GYROSCOPE Pitch (rad/s)",
+          "GYROSCOPE Roll (rad/s)"
+        ],
+        "magnetometer": [
+          "MAGNETIC FIELD X (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Y (\u00ce\u00bcT)",
+          "MAGNETIC FIELD Z (\u00ce\u00bcT)"
+        ],
+        "orientation": [
+          "GPS ORIENTATION (\u00c2\u00b0)",
+          "ORIENTATION (Yaw) (\u00c2\u00b0)",
+          "ORIENTATION (Pitch) (\u00c2\u00b0)",
+          "ORIENTATION (Roll ) (\u00c2\u00b0)"
+        ],
+        "gnss": [
+          "GPS LATITUDE (degrees)",
+          "GPS LONGITUDE (degrees)",
+          "GPS ALTITUDE (m)",
+          "GPS SPEED (Kmh)",
+          "GPS SATELLITES IN RANGE"
+        ],
+        "unknown": [
+          "DATE (YYYY-MO-DD HH-MI-SS_SSS)"
+        ]
+      },
+      "timestamp_column": "TIME SINCE START (ms)",
+      "timestamp_analysis": {
+        "n_samples": 4673,
+        "duration_sec": 2336.0,
+        "ts_unit": "elapsed_ms -> seconds",
+        "median_dt_sec": 0.5,
+        "freq_hz": 2.0,
+        "n_gaps": 0,
+        "n_duplicate_ts": 0,
+        "max_gap_sec": 0
+      },
+      "sample_stats": {
+        "GPS LATITUDE (degrees)": {
+          "min": 51.819,
+          "max": 52.1568,
+          "mean": 52.008,
+          "null%": 0.0
+        },
+        "GPS LONGITUDE (degrees)": {
+          "min": -2.224,
+          "max": -1.8845,
+          "mean": -2.0422,
+          "null%": 0.0
+        },
+        "GPS ALTITUDE (m)": {
+          "min": 43.0,
+          "max": 117.0,
+          "mean": 74.3653,
+          "null%": 0.0
+        },
+        "GPS SPEED (Kmh)": {
+          "min": 0.0,
+          "max": 34.34,
+          "mean": 21.6704,
+          "null%": 0.0
+        },
+        "GPS ACCURACY (m)": {
+          "min": 5.0,
+          "max": 70.0,
+          "mean": 17.0319,
+          "null%": 0.0
+        },
+        "GPS ORIENTATION (\u00c2\u00b0)": {
+          "min": 109.8,
+          "max": 294.4,
+          "mean": 216.3716,
+          "null%": 0.0
+        },
+        "TIME SINCE START (ms)": {
+          "min": 21.0,
+          "max": 2336020.0,
+          "mean": 1168020.5998,
+          "null%": 0.0
+        },
+        "ACCELEROMETER X (m/s\u00b2)": {
+          "min": -3.4502,
+          "max": 2.2719,
+          "mean": -0.0084,
+          "null%": 0.0
+        }
+      },
+      "null_pct_per_column": {},
+      "gnss_outage_check": {
+        "gnss_lat_missing": 0,
+        "gnss_lat_zero": 0,
+        "gnss_lat_range": [
+          51.819,
+          52.1568
+        ],
+        "gnss_repeated_rows": 4517
+      }
+    }
+  ]
+}
