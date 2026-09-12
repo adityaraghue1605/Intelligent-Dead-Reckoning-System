@@ -2,20 +2,28 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>SIH 2026 — Intelligent Dead Reckoning (IDR) System</title>
   <meta name="description" content="Smartphone-Based Intelligent Dead Reckoning System with AI Drift Compensation & GNSS Outage Recovery">
+  <meta name="theme-color" content="#00F2FE">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="IDR Mobile">
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon.svg">
 
   <!-- Google Fonts: Outfit & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet CSS (Bundled Local) -->
+  <link rel="stylesheet" href="./leaflet.css">
 
   <!-- Custom Styles -->
-  <link rel="stylesheet" href="/static/index.css">
+  <link rel="stylesheet" href="./index.css">
 </head>
 <body class="dark-theme">
   <!-- Top Navigation Header -->
@@ -36,6 +44,10 @@
         <span class="mode-dot"></span>
         <span id="mode-text">GNSS AIDED</span>
       </div>
+      <button id="btn-header-gps-toggle" class="header-gps-btn gps-active" title="Click to Toggle GPS ON / OFF">
+        <span class="header-gps-icon">🛰️</span>
+        <span id="header-gps-text">GPS: ON</span>
+      </button>
       <div id="drift-target-badge" class="drift-badge drift-pass">
         <span class="drift-target-label">DRIFT:</span>
         <span id="drift-pct-val">0.0%</span>
@@ -44,13 +56,20 @@
     </div>
 
     <div class="header-right">
+      <div class="header-mobile-actions">
+        <button id="btn-pwa-install" class="pwa-install-btn" title="Install Android Mobile App">📲 Install App</button>
+        <span id="native-bridge-badge" class="badge-bridge hidden" title="Connected to Native Android System">🤖 ANDROID BRIDGE</span>
+      </div>
       <div class="scenario-selector-box">
         <label for="scenario-select">Trajectory:</label>
         <select id="scenario-select" class="custom-select">
-          <option value="S-A1.csv">S-A1.csv (49.5 min Highway/Urban)</option>
+          <option value="S-A10.csv" selected>S-A10.csv (3,951 pts, Continuous Highway)</option>
+          <option value="S-S1.csv">S-S1.csv (49k pts, Paired GT Vehicle)</option>
+          <option value="S-S2.csv">S-S2.csv (72k pts, Paired Urban Sequence)</option>
+          <option value="S-S3.csv">S-S3.csv (94k pts, Paired Extended Sequence)</option>
+          <option value="S-A1.csv">S-A1.csv (Sparse 1Hz Benchmark)</option>
           <option value="S-A2.csv">S-A2.csv (Suburban Drive)</option>
           <option value="S-A3.csv">S-A3.csv (City Trajectory)</option>
-          <option value="S-A4.csv">S-A4.csv (Extended Route)</option>
         </select>
       </div>
       <div class="connection-status">
@@ -63,7 +82,7 @@
   <!-- Main Dashboard Layout -->
   <main class="dashboard-grid">
     <!-- Left Panel: Map & Trajectory Visualization -->
-    <section class="map-section glass-card">
+    <section id="section-map" class="map-section glass-card mobile-tab-pane active" data-mobile-tab="map">
       <div class="map-header">
         <div class="map-legend">
           <div class="legend-item"><span class="legend-line line-gt"></span> Ground Truth (GNSS)</div>
@@ -75,10 +94,59 @@
           <button id="btn-fit-route" class="icon-btn" title="Fit Entire Trajectory to View">🗺️ Fit Route</button>
           <button id="btn-recenter" class="icon-btn" title="Follow Vehicle">🎯 Follow</button>
           <button id="btn-clear-path" class="icon-btn" title="Clear Trajectory Trail">🧹 Clear Path</button>
+          <span class="basemap-separator">|</span>
+          <button id="btn-basemap-osm" class="icon-btn active" title="OpenStreetMap Standard">🗺️ OSM</button>
+          <button id="btn-basemap-dark" class="icon-btn" title="Carto Dark Basemap">🌙 Dark</button>
+          <button id="btn-basemap-voyager" class="icon-btn" title="Carto Voyager Basemap">🧭 Voyager</button>
         </div>
       </div>
 
+      <!-- Mobile Floating Cockpit HUD Capsule -->
+      <div id="mobile-floating-hud" class="mobile-floating-hud">
+        <div class="hud-item hud-speed">
+          <span class="hud-label">AI SPEED</span>
+          <div class="hud-speed-row">
+            <span class="hud-value" id="mobile-hud-speed">0.0</span>
+            <span class="hud-unit">km/h</span>
+          </div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-item hud-heading">
+          <span class="hud-label">HEADING</span>
+          <div class="hud-heading-row">
+            <span id="mobile-hud-compass-icon" class="hud-compass-icon">🧭</span>
+            <span class="hud-value" id="mobile-hud-heading">000°</span>
+          </div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-item hud-drift">
+          <span class="hud-label">DRIFT</span>
+          <span class="hud-value hud-drift-pass" id="mobile-hud-drift">0.0%</span>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-item hud-mode">
+          <span class="hud-label">SIGNAL</span>
+          <span class="hud-mode-pill mode-gnss" id="mobile-hud-mode">GNSS LOCK</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Controls Floating on Map (Mobile & Desktop) -->
+      <div class="map-floating-quickbar">
+        <button id="btn-quick-play" class="btn-quick-action btn-quick-play" title="Start/Pause Drive">
+          <span id="quick-play-icon">▶</span>
+          <span id="quick-play-text">Drive</span>
+        </button>
+        <button id="btn-quick-gps" class="btn-quick-action btn-quick-gps" title="Toggle GPS Signal">
+          <span class="quick-gps-dot">●</span>
+          <span id="quick-gps-text">GPS: ON</span>
+        </button>
+        <button id="btn-quick-recenter" class="btn-quick-action btn-quick-recenter" title="Recenter on Vehicle">
+          <span>🎯</span>
+        </button>
+      </div>
+
       <div id="navigation-map" class="map-container"></div>
+      <div id="nav-toast-container" class="nav-toast-container"></div>
 
       <!-- Live Outage Notification Banner -->
       <div id="blackout-banner" class="blackout-banner hidden">
@@ -94,22 +162,182 @@
 
     <!-- Right Panel: Telemetry & Simulation Controls -->
     <aside class="sidebar-panel">
+      <!-- Trip Route & Destination Guidance Card -->
+      <div id="card-nav-guidance" class="glass-card nav-guidance-card mobile-tab-pane" data-mobile-tab="route">
+        <div class="card-header-flex">
+          <h2 class="card-title">🧭 Trip Route &amp; Destination</h2>
+          <span id="badge-nav-guidance" class="stat-badge guidance-active-badge">AI GUIDANCE</span>
+        </div>
+
+        <!-- 1. Starting Point (Where We Started) -->
+        <div class="waypoint-row waypoint-origin">
+          <div class="waypoint-icon-box origin-icon">🟢</div>
+          <div class="waypoint-details">
+            <div class="waypoint-label">STARTING POINT (ORIGIN)</div>
+            <div id="text-origin-coords" class="waypoint-coords">52.431630, -1.525745</div>
+            <div id="text-origin-sub" class="waypoint-sub">Start of Trajectory &bull; 0.0 m traveled</div>
+          </div>
+          <button id="btn-set-origin-current" class="btn-mini" title="Set current vehicle position as origin">📍 Set Current</button>
+        </div>
+
+        <!-- 2. Current Location (Where We Are) -->
+        <div class="waypoint-row waypoint-current">
+          <div class="waypoint-icon-box current-icon">🚘</div>
+          <div class="waypoint-details">
+            <div class="waypoint-label">CURRENT LOCATION (WHERE WE ARE)</div>
+            <div id="text-current-coords" class="waypoint-coords">52.431630, -1.525745</div>
+            <div class="waypoint-sub">Traveled from Start: <span id="text-dist-from-start">0.0 m</span> &bull; Heading: <span id="text-current-heading">000°</span></div>
+          </div>
+        </div>
+
+        <!-- 3. Destination (Where We Want To Go) -->
+        <div class="waypoint-row waypoint-destination">
+          <div class="waypoint-icon-box dest-icon">🏁</div>
+          <div class="waypoint-details">
+            <div class="waypoint-label">DESTINATION (WHERE WE WANT TO GO)</div>
+            <div id="text-dest-coords" class="waypoint-coords">52.448920, -1.512030</div>
+            <div id="text-dest-sub" class="waypoint-sub">Scenario Route End</div>
+          </div>
+          <button id="btn-reset-dest" class="btn-mini" title="Reset destination to original scenario end">↺ Reset</button>
+        </div>
+
+        <!-- Intercity City / Place Name Trip Planner -->
+        <div class="intercity-planner-card">
+          <div class="intercity-card-header">
+            <span class="intercity-tag">🛣️ INTERCITY TRIP PLANNER</span>
+            <span class="intercity-subtag">Type City Names</span>
+          </div>
+
+          <div class="intercity-inputs-container">
+            <!-- Starting Point City -->
+            <div class="city-field-wrap">
+              <label class="city-field-label">
+                <span class="city-dot origin-dot">🟢</span> STARTING POINT (CITY / PLACE)
+              </label>
+              <input type="text" id="input-origin-city" class="city-input-field" placeholder="Enter starting city (e.g. Coventry, Delhi, Mumbai)..." value="Coventry">
+            </div>
+
+            <!-- Swap Button -->
+            <div class="city-swap-box">
+              <button id="btn-swap-cities" class="btn-city-swap" title="Swap Starting Point and Destination">⇅ Swap</button>
+            </div>
+
+            <!-- End Destination City -->
+            <div class="city-field-wrap">
+              <label class="city-field-label">
+                <span class="city-dot dest-dot">🏁</span> END DESTINATION (CITY / PLACE)
+              </label>
+              <input type="text" id="input-dest-city" class="city-input-field" placeholder="Enter destination city (e.g. Birmingham, Oxford, Pune)..." value="Birmingham">
+            </div>
+          </div>
+
+          <button id="btn-plan-intercity" class="btn btn-plan-intercity">
+            <span class="btn-icon">🛣️</span> Plan Intercity Highway Route
+          </button>
+        </div>
+
+        <!-- Popular Intercity Routes Presets -->
+        <div class="intercity-presets-container">
+          <span class="preset-label">⚡ Popular Intercity Trips:</span>
+          <div class="intercity-preset-pills">
+            <button class="btn-intercity-pill" data-from="Coventry" data-to="Birmingham">🇬🇧 Coventry ➔ Birmingham</button>
+            <button class="btn-intercity-pill" data-from="London" data-to="Oxford">🇬🇧 London ➔ Oxford</button>
+            <button class="btn-intercity-pill" data-from="Mumbai" data-to="Pune">🇮🇳 Mumbai ➔ Pune</button>
+            <button class="btn-intercity-pill" data-from="Delhi" data-to="Agra">🇮🇳 Delhi ➔ Agra</button>
+            <button class="btn-intercity-pill" data-from="Bengaluru" data-to="Mysuru">🇮🇳 Bengaluru ➔ Mysuru</button>
+          </div>
+        </div>
+
+        <!-- Collapsible Advanced: Map Click & Coordinate Overrides -->
+        <details class="advanced-coords-accordion">
+          <summary class="advanced-coords-summary">⚙️ Map Click &amp; Lat/Lon Override</summary>
+          <div class="advanced-coords-body">
+            <div class="map-instruction-tip">
+              💡 Single-click map to set 🏁. Right-click to set 🟢.
+            </div>
+            <div class="destination-picker-toolbar">
+              <button id="btn-pick-dest-map" class="btn btn-pick-dest" title="Click anywhere on the map to set destination pin">
+                <span class="btn-icon">🎯</span> <span id="btn-pick-dest-text">Click Map Pin</span>
+              </button>
+            </div>
+            <div class="coord-input-row">
+              <input type="number" step="0.000001" id="input-dest-lat" placeholder="Dest Lat (52.4350)" class="coord-input">
+              <input type="number" step="0.000001" id="input-dest-lon" placeholder="Dest Lon (-1.5200)" class="coord-input">
+              <button id="btn-apply-dest-coords" class="btn-mini-apply" title="Apply coordinates">Set</button>
+            </div>
+          </div>
+        </details>
+
+        <!-- Live Guidance HUD -->
+        <div class="guidance-metrics-strip">
+          <div class="guidance-metric">
+            <span class="g-label">DISTANCE TO GO</span>
+            <span id="val-rem-distance" class="g-val highlight-amber">0.0 km</span>
+          </div>
+          <div class="guidance-metric">
+            <span class="g-label">ESTIMATED ETA</span>
+            <span id="val-eta" class="g-val highlight-cyan">--:--</span>
+          </div>
+          <div class="guidance-metric">
+            <span class="g-label">BEARING TO GO</span>
+            <span id="val-target-bearing" class="g-val">000°</span>
+          </div>
+        </div>
+
+        <!-- Trip Progress Bar -->
+        <div class="trip-progress-box">
+          <div class="trip-progress-labels">
+            <span>Trip Progress (Start 🟢 &rarr; End 🏁)</span>
+            <span id="trip-progress-pct">0.0%</span>
+          </div>
+          <div class="trip-progress-track">
+            <div id="trip-progress-fill" class="trip-progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Destination Reached Alert -->
+        <div id="alert-destination-reached" class="dest-reached-banner hidden">
+          🎯 DESTINATION REACHED! Trip Complete.
+        </div>
+      </div>
+
       <!-- Simulation Controls Card -->
-      <div class="glass-card controls-card">
-        <h2 class="card-title">Playback & Outage Control</h2>
+      <div id="card-controls" class="glass-card controls-card mobile-tab-pane" data-mobile-tab="controls">
+        <h2 class="card-title">Playback &amp; Outage Control</h2>
         
         <div class="control-btn-group">
           <button id="btn-play" class="btn btn-primary">▶ Start Drive</button>
+          <button id="btn-jump-drive" class="btn btn-accent" title="Skip initial parked curb standstill and start driving immediately">⚡ Drive Now</button>
           <button id="btn-pause" class="btn btn-secondary">⏸ Pause</button>
           <button id="btn-reset" class="btn btn-outline">↺ Reset</button>
         </div>
+        <div id="drive-status-hint" class="drive-status-hint hidden"></div>
+
+        <!-- Dedicated GPS ON / OFF Controller -->
+        <div class="gps-signal-control-box">
+          <div class="gps-control-header">
+            <span class="gps-control-title">🛰️ GPS Signal Control:</span>
+            <span id="gps-state-pill" class="gps-state-pill state-on">● GPS ACTIVE (ON)</span>
+          </div>
+          <div class="gps-control-buttons">
+            <button id="btn-gps-on" class="btn btn-gps-on active" title="Turn GPS Signal ON (Normal GNSS Lock)">
+              🟢 GPS ON
+            </button>
+            <button id="btn-gps-off" class="btn btn-gps-off" title="Turn GPS Signal OFF (Simulate Outage / Dead Reckoning)">
+              🔴 GPS OFF
+            </button>
+            <button id="btn-gps-toggle" class="btn btn-gps-toggle" title="Toggle GPS ON / OFF">
+              🔄 Toggle GPS
+            </button>
+          </div>
+        </div>
 
         <div class="blackout-triggers">
-          <div class="outage-title">Inject GNSS Blackout Scenarios:</div>
+          <div class="outage-title">Timed Outage Benchmarks:</div>
           <div class="trigger-buttons">
             <button id="btn-tunnel-30" class="btn btn-tunnel">🚇 30s Tunnel</button>
             <button id="btn-tunnel-60" class="btn btn-tunnel">⛰️ 60s Tunnel</button>
-            <button id="btn-toggle-blackout" class="btn btn-outage-toggle">🔴 Toggle Blackout</button>
+            <button id="btn-toggle-blackout" class="btn btn-outage-toggle" style="display: none;">🔴 Toggle Blackout</button>
           </div>
         </div>
 
@@ -125,56 +353,112 @@
       </div>
 
       <!-- Telemetry Metric Cards -->
-      <div class="telemetry-grid">
-        <!-- Speedometer -->
-        <div class="glass-card stat-card">
+      <div id="card-telemetry-grid" class="telemetry-grid mobile-tab-pane" data-mobile-tab="telemetry">
+        <!-- Modern Gauge Speedometer -->
+        <div class="glass-card stat-card gauge-stat-card">
           <div class="stat-header">
             <span class="stat-label">VEHICLE SPEED</span>
-            <span class="stat-badge ai-badge">AI ESTIMATED</span>
+            <span class="stat-badge ai-badge">⚡ AI ESTIMATOR</span>
           </div>
-          <div class="stat-body">
-            <div class="stat-main-value" id="val-speed">0.0</div>
-            <div class="stat-unit">km/h</div>
-          </div>
-          <div class="stat-sub">Reference GPS: <span id="val-gt-speed">0.0</span> km/h</div>
-        </div>
-
-        <!-- Compass / Heading -->
-        <div class="glass-card stat-card">
-          <div class="stat-header">
-            <span class="stat-label">HEADING / YAW</span>
-            <span class="stat-badge">AZIMUTH</span>
-          </div>
-          <div class="stat-body">
-            <div class="stat-main-value" id="val-heading">000°</div>
-            <div class="compass-dial">
-              <div id="compass-needle" class="compass-needle"></div>
+          <div class="speed-gauge-wrap">
+            <svg class="speed-gauge-svg" viewBox="0 0 160 110">
+              <defs>
+                <linearGradient id="speedArcGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#00F2FE" />
+                  <stop offset="60%" stop-color="#38BDF8" />
+                  <stop offset="100%" stop-color="#10B981" />
+                </linearGradient>
+                <filter id="gaugeGlow">
+                  <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                  <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                  </feMerge>
+                </filter>
+              </defs>
+              <path class="gauge-track" d="M 20 95 A 65 65 0 1 1 140 95" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="9" stroke-linecap="round" />
+              <path id="speed-gauge-arc" class="gauge-arc" d="M 20 95 A 65 65 0 1 1 140 95" fill="none" stroke="url(#speedArcGrad)" stroke-width="9" stroke-linecap="round" stroke-dasharray="245" stroke-dashoffset="245" filter="url(#gaugeGlow)" />
+            </svg>
+            <div class="speed-gauge-center">
+              <div class="stat-main-value" id="val-speed">0.0</div>
+              <div class="stat-unit">km/h</div>
             </div>
           </div>
-          <div class="stat-sub">Pitch: <span id="val-pitch">0.0°</span> &bull; Roll: <span id="val-roll">0.0°</span></div>
+          <div class="stat-sub speed-sub-bar">
+            <span>Reference GPS: <strong id="val-gt-speed">0.0</strong> km/h</span>
+            <span id="speed-delta-badge" class="delta-badge nominal">Δ 0.0</span>
+          </div>
         </div>
 
-        <!-- Drift & Benchmark -->
-        <div class="glass-card stat-card full-span">
+        <!-- Compass / Heading / Gyro Attitude -->
+        <div class="glass-card stat-card compass-stat-card">
           <div class="stat-header">
-            <span class="stat-label">OUTAGE DRIFT BENCHMARK</span>
+            <span class="stat-label">HEADING &amp; ATTITUDE</span>
+            <span class="stat-badge">3D GYRO</span>
+          </div>
+          <div class="compass-display-wrap">
+            <div class="compass-rose-container">
+              <div class="compass-dial" id="compass-dial">
+                <span class="cardinal-point cardinal-n">N</span>
+                <span class="cardinal-point cardinal-e">E</span>
+                <span class="cardinal-point cardinal-s">S</span>
+                <span class="cardinal-point cardinal-w">W</span>
+                <div id="compass-needle" class="compass-needle"></div>
+              </div>
+            </div>
+            <div class="compass-readout-col">
+              <div class="stat-main-value" id="val-heading">000°</div>
+              <div class="attitude-bars">
+                <div class="attitude-row">
+                  <span class="att-label">Pitch:</span>
+                  <span class="att-val" id="val-pitch">0.0°</span>
+                </div>
+                <div class="attitude-row">
+                  <span class="att-label">Roll:</span>
+                  <span class="att-val" id="val-roll">0.0°</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="stat-sub">Fused IMU Attitude Matrix &bull; ZUPT Active</div>
+        </div>
+
+        <!-- Drift & Benchmark Showdown -->
+        <div class="glass-card stat-card full-span benchmark-hero-card">
+          <div class="stat-header">
+            <div class="benchmark-title-group">
+              <span class="stat-label">OUTAGE DRIFT BENCHMARK</span>
+              <span class="target-criterion">Target: &lt;10% Total Distance</span>
+            </div>
             <span id="benchmark-status-tag" class="stat-badge target-tag">TARGET &lt;10%</span>
           </div>
           <div class="drift-comparison-grid">
             <div class="drift-column idr-column">
-              <div class="drift-col-label">🔵 AI-Powered IDR</div>
+              <div class="drift-col-header">
+                <span class="drift-col-icon">🔵</span>
+                <span class="drift-col-label">AI-Powered IDR</span>
+              </div>
               <div class="drift-large-number" id="val-idr-drift">0.00 m</div>
-              <div class="drift-col-sub">Drift: <span id="val-idr-pct">0.0%</span> of dist</div>
+              <div class="drift-col-sub">Drift Error: <strong id="val-idr-pct" class="drift-pct-highlight">0.0%</strong> of distance</div>
+              <div class="drift-meter-track">
+                <div id="meter-idr-drift" class="drift-meter-fill idr-fill" style="width: 7%"></div>
+              </div>
             </div>
-            <div class="drift-vs">VS</div>
+            <div class="drift-vs-badge">VS</div>
             <div class="drift-column ins-column">
-              <div class="drift-col-label">🔴 Conventional INS</div>
+              <div class="drift-col-header">
+                <span class="drift-col-icon">🔴</span>
+                <span class="drift-col-label">Conventional INS</span>
+              </div>
               <div class="drift-large-number" id="val-ins-drift">0.00 m</div>
-              <div class="drift-col-sub">Drift: <span id="val-ins-pct">0.0%</span> (Diverged)</div>
+              <div class="drift-col-sub">Drift Error: <strong id="val-ins-pct">0.0%</strong> (Cumulative)</div>
+              <div class="drift-meter-track">
+                <div id="meter-ins-drift" class="drift-meter-fill ins-fill" style="width: 75%"></div>
+              </div>
             </div>
           </div>
           <div class="stat-footer-bar">
-            <span>Outage Dist: <strong id="val-outage-dist">0.0 m</strong></span>
+            <span>Outage Distance: <strong id="val-outage-dist">0.0 m</strong></span>
             <span>Duration: <strong id="val-outage-dur">0.0 s</strong></span>
             <span>Status: <strong id="val-benchmark-verdict">Awaiting Outage</strong></span>
           </div>
@@ -183,23 +467,88 @@
         <!-- Real-time Waveform Canvas -->
         <div class="glass-card stat-card full-span waveform-card">
           <div class="stat-header">
-            <span class="stat-label">REAL-TIME IMU ACCELEROMETER STREAM (m/s²)</span>
-            <span class="stat-badge">2 Hz REAL DATA</span>
+            <span class="stat-label">REAL-TIME 3-AXIS IMU ACCELEROMETER STREAM</span>
+            <span class="stat-badge pulse-badge">● LIVE 2 Hz</span>
           </div>
           <canvas id="accel-waveform" width="400" height="90" class="waveform-canvas"></canvas>
           <div class="waveform-legend">
-            <span class="wave-x">■ Accel X</span>
-            <span class="wave-y">■ Accel Y</span>
-            <span class="wave-z">■ Accel Z</span>
+            <span class="wave-x">■ Accel X (Longitudinal)</span>
+            <span class="wave-y">■ Accel Y (Lateral)</span>
+            <span class="wave-z">■ Accel Z (Vertical)</span>
           </div>
         </div>
       </div>
     </aside>
   </main>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+    <button class="mobile-nav-btn active" data-tab="map">
+      <span class="mobile-nav-icon">🗺️</span>
+      <span class="mobile-nav-label">Map & HUD</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="route">
+      <span class="mobile-nav-icon">🧭</span>
+      <span class="mobile-nav-label">Route</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="telemetry">
+      <span class="mobile-nav-icon">📊</span>
+      <span class="mobile-nav-label">Telemetry</span>
+    </button>
+    <button class="mobile-nav-btn" data-tab="controls">
+      <span class="mobile-nav-icon">🕹️</span>
+      <span class="mobile-nav-label">Controls</span>
+    </button>
+  </nav>
+
+  <!-- PWA Install Guide Modal Dialog -->
+  <div id="pwa-install-modal" class="install-modal-backdrop hidden">
+    <div class="install-modal-card">
+      <div class="install-modal-header">
+        <h3>📲 Install IDR Mobile on Android</h3>
+        <button id="btn-close-install-modal" class="install-modal-close" title="Close">&times;</button>
+      </div>
+      <div class="install-modal-body">
+        <p class="install-modal-desc">Android Chrome requires a secure connection to show the native <strong>"Install"</strong> prompt on Wi-Fi:</p>
+        
+        <div class="install-step-row">
+          <div class="install-step-badge">A</div>
+          <div class="install-step-text">
+            <strong>Method 1 (Quickest):</strong> In Chrome on your phone, open a new tab to:<br>
+            <code style="color: #00f2fe; background: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 0.78rem; word-break: break-all;">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code><br>
+            Paste <code style="color: #34d399;">http://10.12.61.144:8000</code>, set to <strong>Enabled</strong>, and tap <strong>Relaunch</strong>.
+          </div>
+        </div>
+
+        <div class="install-step-row">
+          <div class="install-step-badge">B</div>
+          <div class="install-step-text">
+            <strong>Method 2 (Chrome Menu):</strong> In Chrome, tap the <strong>three dots (⋮)</strong> &gt; look for <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong>.
+          </div>
+        </div>
+
+        <div class="install-step-row">
+          <div class="install-step-badge">C</div>
+          <div class="install-step-text">
+            <strong>Method 3 (HTTPS):</strong> Switch to encrypted HTTPS so Android triggers the install dialog automatically.
+          </div>
+        </div>
+      </div>
+      <div class="install-modal-footer" style="flex-wrap: wrap; gap: 8px;">
+        <a href="/static/idr-navigator.apk" download="idr-navigator.apk" class="btn btn-primary" style="text-decoration:none; background: linear-gradient(135deg, #10B981 0%, #059669 100%); display: inline-flex; align-items: center; gap: 6px;">
+          <span>📥</span><span>Download Native APK</span>
+        </a>
+        <a href="/install" class="btn btn-primary" style="text-decoration:none; display: inline-flex; align-items: center; gap: 6px;">
+          <span>📲</span><span>Install Hub</span>
+        </a>
+        <button id="btn-modal-dismiss" class="btn btn-outline">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS (Bundled Local) -->
+  <script src="./leaflet.js"></script>
   <!-- Main Application Script -->
-  <script src="/static/app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>

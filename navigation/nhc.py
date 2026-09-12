@@ -48,9 +48,15 @@ class NonHolonomicConstraints:
         acc_std = float(np.std(self.zupt_accel_window))
         gyro_mean = float(np.mean(self.zupt_gyro_window))
 
-        # Vehicle stationary criteria: very low acceleration variation & gyro rates near zero
-        self.is_stationary = (acc_std < 0.08 and gyro_mean < 0.03)
+        # Vehicle stationary criteria: low acceleration variation & gyro rates near zero (automotive idle vibration)
+        self.is_stationary = (acc_std < 0.30 and gyro_mean < 0.085)
         return self.is_stationary
+
+    def detect_zero_velocity(self, accel: np.ndarray, gyro: np.ndarray) -> bool:
+        """Helper alias taking vectors directly."""
+        accel_norm = float(np.linalg.norm(accel))
+        gyro_norm = float(np.linalg.norm(gyro))
+        return self.check_zupt(accel_norm, gyro_norm)
 
     def project_velocity_to_body(self, vel_enu: np.ndarray, R_b_n: np.ndarray) -> np.ndarray:
         """

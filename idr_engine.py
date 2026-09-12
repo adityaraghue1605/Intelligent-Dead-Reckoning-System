@@ -157,9 +157,12 @@ class IDREngine:
             yaw_deg, pitch_deg, roll_deg = packet.orientation
             self.ekf.ins.update_attitude_from_orientation(yaw_deg, pitch_deg, roll_deg)
 
+        pos_prev = self.ekf.ins.pos_enu.copy()
+
         # 2. INS Prediction step
         nav_state = self.ekf.predict(acc_np, dt, gyro_np, grav_np)
-        self.total_distance_m = self.ekf.ins.total_distance_m
+        if not self.in_outage:
+            self.total_distance_m = self.ekf.ins.total_distance_m
 
         # 3. Assess GNSS availability & quality
         has_gnss_fix = (
@@ -185,22 +188,62 @@ class IDREngine:
 
             # 4. In Outage: Apply ZUPT or AI-Speed + NHC
             raw_pred_speed = self.ai_speed.predict_speed()
-            pred_fwd_speed = raw_pred_speed * self.speed_scale_factor
-            if pred_fwd_speed < 0.4 and self.last_valid_speed_mps > 0.4:
-                pred_fwd_speed = self.last_valid_speed_mps
+            raw_ai_speed = max(0.0, raw_pred_speed * self.speed_scale_factor)
+
+            # Blend inertial continuity from entry speed with AI speed model
+            decay_weight = float(np.exp(-self.outage_duration_s / 35.0)) if self.last_valid_speed_mps > 1.0 else 0.0
+            pred_fwd_speed = decay_weight * self.last_valid_speed_mps + (1.0 - decay_weight) * raw_ai_speed
 
             acc_norm = float(np.linalg.norm(acc_np))
             gyro_norm = float(np.linalg.norm(gyro_np))
-            is_stopped = self.nhc.check_zupt(acc_norm, gyro_norm) and (pred_fwd_speed < 0.5)
+            is_stopped = self.nhc.detect_zero_velocity(acc_np, gyro_np) and (raw_ai_speed < 3.5)
+            
+            # Rate-of-change continuity constraint on forward speed (prevents impossible instantaneous drops/spikes)
+            if not hasattr(self, 'dr_fwd_speed_mps') or self.dr_fwd_speed_mps is None:
+                self.dr_fwd_speed_mps = self.last_valid_speed_mps if self.last_valid_speed_mps > 0.5 else pred_fwd_speed
 
             if is_stopped:
-                self.ekf.update_zupt(zupt_sigma=0.05)
+                max_stop_decel = 5.0 * dt
+                self.dr_fwd_speed_mps = max(0.0, self.dr_fwd_speed_mps - max_stop_decel)
+                if self.dr_fwd_speed_mps < 0.3:
+                    self.dr_fwd_speed_mps = 0.0
+                pred_fwd_speed = self.dr_fwd_speed_mps
+                self.last_valid_speed_mps = pred_fwd_speed
+            else:
+                max_decel = 4.5 * dt
+                max_accel = 3.5 * dt
+                pred_fwd_speed = float(np.clip(pred_fwd_speed, self.dr_fwd_speed_mps - max_decel, self.dr_fwd_speed_mps + max_accel))
+                self.dr_fwd_speed_mps = pred_fwd_speed
+
+            if is_stopped and pred_fwd_speed == 0.0:
+                self.ekf.update_zupt(zupt_sigma=0.02)
             else:
                 self.ekf.update_ai_speed_and_nhc(
                     ai_forward_speed_mps=pred_fwd_speed,
-                    speed_sigma=0.8,
-                    nhc_sigma=0.10
+                    speed_sigma=0.5,
+                    nhc_sigma=0.08
                 )
+
+            # High-fidelity Kinematic Dead Reckoning projection along vehicle heading
+            # Eliminates runaway unconstrained accelerometer double-integration tilt drift
+            sol_temp = self.ekf.get_nav_solution()
+            hdg_rad = math.radians(sol_temp["heading_deg"])
+            dr_step_dist = pred_fwd_speed * dt
+            d_east = dr_step_dist * math.sin(hdg_rad)
+            d_north = dr_step_dist * math.cos(hdg_rad)
+
+            self.ekf.ins.pos_enu[0] = pos_prev[0] + d_east
+            self.ekf.ins.pos_enu[1] = pos_prev[1] + d_north
+            self.ekf.ins.vel_enu = np.array([
+                pred_fwd_speed * math.sin(hdg_rad),
+                pred_fwd_speed * math.cos(hdg_rad),
+                0.0
+            ], dtype=np.float64)
+
+            self.total_distance_m += dr_step_dist
+            self.ekf.ins.total_distance_m = self.total_distance_m
+            self.outage_distance_m = self.total_distance_m - self.outage_start_dist_m
+            self.outage_duration_s = (packet.timestamp_ms - self.outage_start_ts_ms) / 1000.0
         else:
             # GNSS available
             if self.in_outage:
@@ -215,9 +258,10 @@ class IDREngine:
             # Online speed calibration against true GNSS (valid down to 0.4 m/s = 1.4 km/h)
             if speed_mps is not None and speed_mps > 0.4:
                 self.last_valid_speed_mps = speed_mps
+                self.dr_fwd_speed_mps = speed_mps
                 pred_ai = self.ai_speed.predict_speed()
                 if pred_ai > 0.5:
-                    self.speed_scale_factor = float(np.clip(speed_mps / pred_ai, 0.05, 5.0))
+                    self.speed_scale_factor = float(np.clip(speed_mps / pred_ai, 0.2, 5.0))
 
             self.ekf.update_gnss(
                 lat_deg=packet.gnss_lat,

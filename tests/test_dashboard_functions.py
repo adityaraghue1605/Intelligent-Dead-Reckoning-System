@@ -14,13 +14,41 @@ Tests all dashboard controls:
 Outputs explicit PASS/FAIL per control.
 """
 
+import sys
 import time
 import json
 import urllib.request
+from pathlib import Path
 import numpy as np
 import pytest
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 BASE_URL = "http://127.0.0.1:8000"
+
+
+def ensure_server():
+    """Ensure the FastAPI test server is active before making requests."""
+    try:
+        with urllib.request.urlopen(f"{BASE_URL}/api/v1/health", timeout=0.5):
+            return
+    except Exception:
+        pass
+
+    import threading
+    import uvicorn
+    from api.main import app
+
+    config = uvicorn.Config(app, host="127.0.0.1", port=8000, log_level="error")
+    server = uvicorn.Server(config)
+    t = threading.Thread(target=server.run, daemon=True)
+    t.start()
+    for _ in range(50):
+        try:
+            with urllib.request.urlopen(f"{BASE_URL}/api/v1/health", timeout=0.5):
+                return
+        except Exception:
+            time.sleep(0.1)
 
 
 def http_get(path):
@@ -40,6 +68,7 @@ def http_post(path, data=None):
 
 
 def test_button_functions_automated():
+    ensure_server()
     print("\n" + "=" * 80)
     print("RUNNING AUTOMATED DASHBOARD BUTTON FUNCTION TESTS")
     print("=" * 80)
@@ -108,7 +137,8 @@ def test_button_functions_automated():
             if not sim.forced_blackout:
                 break
         
-        last_outage_pkt = outage_packets[-1]
+        active_packets = [p for p in outage_packets if p["outage"]["active"]]
+        last_outage_pkt = active_packets[-1] if active_packets else outage_packets[-1]
         outage_info = last_outage_pkt["outage"]
         active_dur = outage_info["duration_s"]
         active_dist = outage_info["distance_m"]
@@ -137,7 +167,8 @@ def test_button_functions_automated():
             if not sim.forced_blackout:
                 break
         
-        last_pkt_60 = outage_packets_60[-1]
+        active_packets_60 = [p for p in outage_packets_60 if p["outage"]["active"]]
+        last_pkt_60 = active_packets_60[-1] if active_packets_60 else outage_packets_60[-1]
         dur = last_pkt_60["outage"]["duration_s"]
         dist = last_pkt_60["outage"]["distance_m"]
         assert dur >= 20.0, f"Expected duration >= 20s, got {dur}"
@@ -194,6 +225,63 @@ def test_button_functions_automated():
         results["Drift calculation"] = ("PASS", f"Error={err_m:.2f}m, Dist={dist_m:.1f}m, Drift={drift_pct:.2f}% (Formula verified)")
     except Exception as e:
         results["Drift calculation"] = ("FAIL", str(e))
+
+    # 9. Route Origin & Destination Waypoints Test
+    try:
+        route_info = http_get("/api/v1/scenarios/route")
+        assert "origin" in route_info, "Route info must include origin"
+        assert "destination" in route_info, "Route info must include destination"
+        assert route_info["total_distance_m"] > 0.0, "Route total distance must be > 0"
+
+        # Set custom destination
+        new_dest = http_post("/api/v1/navigation/destination", {"lat": 52.4500, "lon": -1.5100, "label": "Custom Test Target"})
+        assert new_dest["status"] == "updated"
+        assert new_dest["destination"]["is_custom"] is True
+        assert abs(new_dest["destination"]["lat"] - 52.4500) < 1e-4
+
+        # Reset waypoints
+        reset_dest = http_post("/api/v1/navigation/reset_waypoints")
+        assert reset_dest["status"] == "reset"
+        assert reset_dest["destination"]["is_custom"] is False
+        results["Waypoints (Origin/Dest)"] = ("PASS", f"Origin & Dest endpoints verified, total_dist={route_info['total_distance_m']:.1f}m")
+    except Exception as e:
+        results["Waypoints (Origin/Dest)"] = ("FAIL", str(e))
+
+    # 10. Live Trip Guidance & Bearing Test
+    try:
+        pkt = sim.step()
+        assert "guidance" in pkt, "Packet must include guidance payload"
+        g = pkt["guidance"]
+        assert "origin" in g and "destination" in g and "current_pos" in g
+        assert g["dist_to_dest_m"] > 0.0, "Distance to destination must be > 0"
+        assert 0.0 <= g["bearing_to_dest_deg"] <= 360.0, "Bearing must be 0-360 degrees"
+        assert 0.0 <= g["progress_pct"] <= 100.0, "Progress percentage must be 0-100%"
+        results["Trip Guidance & Bearing"] = ("PASS", f"DistToDest={g['dist_to_dest_m']:.1f}m, Bearing={g['bearing_to_dest_deg']:.1f}°, Progress={g['progress_pct']:.1f}%")
+    except Exception as e:
+        results["Trip Guidance & Bearing"] = ("FAIL", str(e))
+
+    # 11. Geocoding by City Name Test
+    try:
+        geo_res = http_get("/api/v1/navigation/geocode?query=London")
+        assert geo_res["status"] == "found", f"Expected status 'found', got {geo_res.get('status')}"
+        res_data = geo_res["result"]
+        assert abs(res_data["lat"] - 51.5074) < 0.1, "London lat mismatch"
+        assert abs(res_data["lon"] - (-0.1278)) < 0.1, "London lon mismatch"
+        results["City Geocoding"] = ("PASS", f"Resolved 'London' -> lat={res_data['lat']}, lon={res_data['lon']}")
+    except Exception as e:
+        results["City Geocoding"] = ("FAIL", str(e))
+
+    # 12. Intercity Highway Trip Planning Test
+    try:
+        intercity_res = http_post("/api/v1/navigation/intercity", {"origin": "London", "destination": "Oxford"})
+        assert intercity_res["status"] == "planned", f"Expected status 'planned', got {intercity_res.get('status')}"
+        assert intercity_res["total_distance_km"] > 50.0, "London->Oxford distance should be > 50km"
+        assert intercity_res["total_steps"] > 100, "Intercity route should have > 100 steps"
+        assert "London" in intercity_res["origin"]["label"]
+        assert "Oxford" in intercity_res["destination"]["label"]
+        results["Intercity Highway Route"] = ("PASS", f"Planned London->Oxford: {intercity_res['total_distance_km']}km, {intercity_res['total_steps']} steps")
+    except Exception as e:
+        results["Intercity Highway Route"] = ("FAIL", str(e))
 
     # Print Report Table
     print(f"\n{'Control / Function':<25} | {'Result':<8} | {'Details'}")

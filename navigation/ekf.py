@@ -170,7 +170,7 @@ class ErrorStateEKF:
         H_3d[0:3, 3:6] = self.ins.R_b_n.T
 
         R_cov = np.diag([speed_sigma**2, nhc_sigma**2, nhc_sigma**2])
-        self._kalman_update(H_3d, res_v_body, R_cov)
+        self._kalman_update(H_3d, res_v_body, R_cov, update_attitude=False)
 
     def update_zupt(self, zupt_sigma: float = 0.05):
         """Zero-Velocity Update when vehicle is detected stationary."""
@@ -181,9 +181,9 @@ class ErrorStateEKF:
         H_zupt[0:3, 3:6] = np.eye(3)
         R_zupt = np.eye(3, dtype=np.float64) * (zupt_sigma**2)
 
-        self._kalman_update(H_zupt, res_vel, R_zupt)
+        self._kalman_update(H_zupt, res_vel, R_zupt, update_attitude=False)
 
-    def _kalman_update(self, H: np.ndarray, residual: np.ndarray, R_cov: np.ndarray):
+    def _kalman_update(self, H: np.ndarray, residual: np.ndarray, R_cov: np.ndarray, update_attitude: bool = True):
         """Standard Kalman gain, state error correction, and covariance update."""
         S = H @ self.P @ H.T + R_cov
         K = self.P @ H.T @ np.linalg.inv(S)
@@ -196,9 +196,10 @@ class ErrorStateEKF:
         self.ins.vel_enu += delta_x[3:6]
 
         # Small angle attitude correction: R_new = (I - skew(psi)) * R_old
-        psi = delta_x[6:9]
-        d_R = np.eye(3) - skew_symmetric(psi)
-        self.ins.R_b_n = d_R @ self.ins.R_b_n
+        if update_attitude:
+            psi = delta_x[6:9]
+            d_R = np.eye(3) - skew_symmetric(psi)
+            self.ins.R_b_n = d_R @ self.ins.R_b_n
 
         # Update biases
         self.accel_bias += delta_x[9:12]

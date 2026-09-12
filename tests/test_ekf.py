@@ -55,13 +55,15 @@ def test_idr_blackout_drift_benchmark():
     lon_curr = start_lon
     steps = 120  # 60s at 2 Hz
 
-    # 1. Warm-up phase: 5 steps with active GNSS fix at 20 m/s East
-    for step in range(5):
+    # 1. Warm-up phase: 10 steps with active GNSS fix at 20 m/s East and realistic road vibrations
+    for step in range(10):
         t_ms = step * 500.0
         lon_curr += (10.0 / (111319.5 * math.cos(math.radians(lat_curr))))
+        vibe_x = float(np.sin(step * 0.4) * 0.3)
+        vibe_y = float(np.cos(step * 0.5) * 0.3)
         packet = SensorPacket(
             timestamp_ms=t_ms,
-            accel=[0.1, 0.1, 9.80665],
+            accel=[vibe_x, vibe_y, 9.80665],
             gyro=[0.0, 0.0, 0.0],
             orientation=[90.0, 0.0, 0.0],
             gnss_lat=lat_curr,
@@ -74,7 +76,7 @@ def test_idr_blackout_drift_benchmark():
     # 2. Trigger 60s GNSS Blackout
     engine.trigger_simulated_blackout(True)
 
-    for step in range(5, 5 + steps):
+    for step in range(10, 10 + steps):
         t_ms = step * 500.0
         lon_curr += (10.0 / (111319.5 * math.cos(math.radians(lat_curr))))
 
